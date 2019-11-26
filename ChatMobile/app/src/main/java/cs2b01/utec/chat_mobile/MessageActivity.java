@@ -1,6 +1,5 @@
 package cs2b01.utec.chat_mobile;
 
-
 import android.app.Activity;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -13,6 +12,7 @@ import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 
@@ -46,58 +46,56 @@ public class MessageActivity extends AppCompatActivity {
         super.onResume();
 
         mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
-        getChats();
+        getMessages();
     }
 
     public void onClickBtnSend(View v) {
-        postMessage();
+        EditText editText = (EditText)findViewById(R.id.txtMessage);
+        sendMessage();
+        editText.getText().clear();
     }
 
-    public void getChats(){
-        final String userFromId = getIntent().getExtras().get("user_from_id").toString();
-        String userToId = getIntent().getExtras().get("user_to_id").toString();
-        String url = "http://10.0.2.2:8000/chats/<user_from_id>/<user_to_id>";
-        url = url.replace("<user_from_id>", userFromId);
-        url = url.replace("<user_to_id>", userToId);
-        RequestQueue queue = Volley.newRequestQueue(this);
+    public void getMessages(){
+        final int userFromId = getIntent().getExtras().getInt("user_from_id");
+        final int userToId = getIntent().getExtras().getInt("user_to_id");
 
-        JsonObjectRequest request = new JsonObjectRequest(
+        String uri = "http://10.0.2.2:8000/messages/"+userFromId+"/"+userToId;
+        JsonArrayRequest request = new JsonArrayRequest(
                 Request.Method.GET,
-                url,
+                uri,
                 null,
-                new Response.Listener<JSONObject>() {
+                new Response.Listener<JSONArray>(){
                     @Override
-                    public void onResponse(JSONObject response) {
-                        try {
-                            JSONArray data = response.getJSONArray("response");
-                            int uID = Integer.parseInt(userFromId);
-                            mAdapter = new MyMessageAdapter(data, getActivity(), uID);
-                            mRecyclerView.setAdapter(mAdapter);
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
+                    public void onResponse(JSONArray response) {
+                        //TODO process response
+                        mAdapter = new MyMessageAdapter(response, getActivity(), userFromId);
+                        mRecyclerView.setAdapter(mAdapter);
                     }
                 },
-                new Response.ErrorListener() {
+                new Response.ErrorListener(){
                     @Override
                     public void onErrorResponse(VolleyError error) {
                         error.printStackTrace();
                     }
                 }
         );
+
+        RequestQueue queue = Volley.newRequestQueue(this);
         queue.add(request);
+
+
     }
 
-    public void postMessage(){
-        String url = "http://10.0.2.2:8000/messages";
+    public void sendMessage(){
+        String url = "http://10.0.2.2:8000/messagesjson";
         RequestQueue queue = Volley.newRequestQueue(this);
         Map<String, String> params = new HashMap();
         final String user_from_id = getIntent().getExtras().get("user_from_id").toString();
         final String user_to_id = getIntent().getExtras().get("user_to_id").toString();
         final String content = ((EditText)findViewById(R.id.txtMessage)).getText().toString();
+        params.put("content", content);
         params.put("user_from_id",user_from_id);
         params.put("user_to_id", user_to_id);
-        params.put("content", content);
         JSONObject parameters = new JSONObject(params);
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(
                 Request.Method.POST,
@@ -106,15 +104,15 @@ public class MessageActivity extends AppCompatActivity {
                 new Response.Listener<JSONObject>() {
                     @Override
                     public void onResponse(JSONObject response) {
-                        // TODO
+                        getMessages();
                     }
                 }, new Response.ErrorListener() {
 
+
             @Override
             public void onErrorResponse(VolleyError error) {
-                // TODO: Handle error
                 error.printStackTrace();
-
+                getMessages();
             }
         });
         queue.add(jsonObjectRequest);

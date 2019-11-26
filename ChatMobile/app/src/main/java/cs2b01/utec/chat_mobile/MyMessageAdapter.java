@@ -32,8 +32,8 @@ public class MyMessageAdapter extends RecyclerView.Adapter<MyMessageAdapter.View
 
         public ViewHolder(View itemView) {
             super(itemView);
-            friendLine = itemView.findViewById(R.id.element_view_friend_line);
-            myLine = itemView.findViewById(R.id.element_view_me_line);
+            friendLine = itemView.findViewById(R.id.txtContact);
+            myLine = itemView.findViewById(R.id.txtUser);
             container = itemView.findViewById(R.id.element_view_container);
         }
     }
